@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Geometry Dash Clone</title>
+  <style>
+:root {
+  --bg: #080b16;
+  --panel: rgba(10, 15, 30, 0.88);
+  --panel-strong: rgba(15, 22, 44, 0.95);
+  --line: #9ef0ff;
+  --accent: #53d1ff;
+  --accent-2: #ffda67;
+  --danger: #ff6b8a;
+  --success: #89ff90;
+  --text: #eff8ff;
+  --shadow: #10233f;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at top, #1b2042, var(--bg) 60%);
+  color: var(--text);
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+body {
+  touch-action: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+
+#hud {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: min(100%, 1000px);
+  padding: 14px 16px 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+#hud.hidden {
+  display: none;
+}
+
+.hud-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: clamp(0.78rem, 2vw, 1rem);
+  letter-spacing: 0.14em;
+  text-shadow: 2px 2px 0 var(--shadow);
+}
+
+.progress-shell {
+  position: relative;
+  height: 24px;
+  border: 3px solid var(--line);
+  background: rgba(6, 11, 22, 0.9);
+  box-shadow: 0 0 0 3px rgba(17, 37, 70, 0.85);
+  overflow: hidden;
+}
+
+#progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #57ffa5, #53d1ff 70%, #fef27a);
+  image-rendering: pixelated;
+}
+
+#progress-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-shadow: 2px 2px 0 #00121e;
+}
+
+#screen-root {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.screen {
+  width: min(92vw, 680px);
+  border: 4px solid var(--line);
+  background: linear-gradient(180deg, rgba(14, 21, 44, 0.92), rgba(7, 11, 24, 0.94));
+  box-shadow: 0 0 0 6px rgba(11, 25, 44, 0.85), 0 22px 48px rgba(0, 0, 0, 0.4);
+  padding: clamp(18px, 4vw, 34px);
+  text-align: center;
+}
+
+.screen h1,
+.screen h2 {
+  margin: 0 0 14px;
+  letter-spacing: 0.12em;
+  text-shadow: 3px 3px 0 #172b55;
+}
+
+.screen h1 {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+}
+
+.screen h2 {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+}
+
+.screen p {
+  margin: 10px auto;
+  max-width: 44ch;
+  line-height: 1.5;
+}
+
+.button-row,
+.card-row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.pixel-button,
+.character-card {
+  border: 3px solid var(--line);
+  background: linear-gradient(180deg, rgba(27, 55, 99, 0.95), rgba(16, 32, 62, 0.95));
+  color: var(--text);
+  box-shadow: 0 0 0 3px #10233f;
+}
+
+.pixel-button {
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 12px 18px;
+  min-width: 148px;
+}
+
+.pixel-button:hover,
+.pixel-button:focus-visible,
+.character-card:hover,
+.character-card:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  border-color: var(--accent-2);
+}
+
+.pixel-button.alt {
+  background: linear-gradient(180deg, rgba(90, 46, 105, 0.95), rgba(47, 26, 62, 0.95));
+}
+
+.pixel-button.danger {
+  background: linear-gradient(180deg, rgba(126, 43, 76, 0.95), rgba(72, 22, 41, 0.95));
+}
+
+.character-card {
+  width: min(100%, 250px);
+  padding: 14px;
+  cursor: pointer;
+}
+
+.character-card.selected {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px #6f5600;
+}
+
+.character-card canvas {
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1;
+  margin: 6px auto 10px;
+  display: block;
+  image-rendering: pixelated;
+  background: radial-gradient(circle at top, #29345e, #0c1120 70%);
+  border: 3px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-stats {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 0.95rem;
+}
+
+.tip {
+  color: #b5d8ff;
+  font-size: 0.92rem;
+}
+
+.flashy {
+  color: var(--accent-2);
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding: 18px 14px 22px;
+  }
+
+  .pixel-button {
+    min-width: 128px;
+    width: 100%;
+  }
+
+  .character-card {
+    width: 100%;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas" aria-label="Geometry Dash Clone game canvas"></canvas>
+
+    <header id="hud" class="hidden" aria-live="polite">
+      <div class="hud-topline">
+        <span id="stage-indicator">STAGE 1</span>
+        <span id="character-indicator">CUBE</span>
+      </div>
+      <div class="progress-shell">
+        <div id="progress-fill"></div>
+        <span id="progress-label">0%</span>
+      </div>
+    </header>
+
+    <div id="screen-root"></div>
+  </div>
+
+  <script>
+/* =========================================================
+   mapGen.js  –  맵 생성 알고리즘
+   ========================================================= */
+const TILE = 40;
+const STAGE_LENGTH = 8000;
+const WORLD_HEIGHT = 540;
+const GROUND_Y = 430;
+
+const CUBE_PATTERNS = [
+  'singleSpike',
+  'doubleSpike',
+  'tripleSpike',
+  'shortBlock',
+  'blockSpike',
+  'tallBlockPad',
+  'boostLane',
+  'slowLane',
+  'doubleBlock',
+];
+
+const SHIP_PAD_TYPES = ['boost', 'slow'];
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+class SeededRandom {
+  constructor(seed) {
+    this.seed = seed >>> 0;
+  }
+
+  next() {
+    this.seed = (1664525 * this.seed + 1013904223) >>> 0;
+    return this.seed / 4294967296;
+  }
+
+  float(min = 0, max = 1) {
+    return min + (max - min) * this.next();
+  }
+
+  int(min, max) {
+    return Math.floor(this.float(min, max + 1));
+  }
+
+  chance(probability) {
+    return this.next() < probability;
+  }
+
+  pick(items) {
+    return items[this.int(0, items.length - 1)];
+  }
+}
+
+function buildStageTheme(stageNumber, character) {
+  const themes = [
+    {
+      skyTop: '#1d2047',
+      skyBottom: '#090c1c',
+      glow: '#53d1ff',
+      glow2: '#f3ff72',
+      ground: '#183352',
+      ground2: '#0e213a',
+    },
+    {
+      skyTop: '#26144c',
+      skyBottom: '#090616',
+      glow: '#ff78cb',
+      glow2: '#53d1ff',
+      ground: '#3a2059',
+      ground2: '#1d1236',
+    },
+    {
+      skyTop: '#0f314d',
+      skyBottom: '#051017',
+      glow: '#53ffbf',
+      glow2: '#8dd6ff',
+      ground: '#15575c',
+      ground2: '#0a2f34',
+    },
+    {
+      skyTop: '#3c1b2d',
+      skyBottom: '#0e0813',
+      glow: '#ffb347',
+      glow2: '#ff6b8a',
+      ground: '#55322d',
+      ground2: '#2b1716',
+    },
+  ];
+
+  const theme = { ...themes[(stageNumber - 1) % themes.length] };
+  if (character === 'ship') {
+    theme.glow2 = '#f8fbff';
+  }
+  return theme;
+}
+
+function createStars(rng, length, theme) {
+  const stars = [];
+  const layerSpeeds = [0.18, 0.35, 0.55];
+  const counts = [64, 48, 36];
+
+  counts.forEach((count, layerIndex) => {
+    for (let i = 0; i < count; i += 1) {
+      const size = 2 + layerIndex;
+      stars.push({
+        x: rng.float(0, length),
+        y: rng.float(24, WORLD_HEIGHT - 120),
+        size,
+        layer: layerIndex,
+        speedFactor: layerSpeeds[layerIndex],
+        color: layerIndex === 0 ? theme.glow2 : layerIndex === 1 ? theme.glow : '#ffffff',
+      });
+    }
+  });
+
+  return stars;
+}
+
+function obstacleRect(type, x, y, w, h, extra = {}) {
+  return { type, x, y, w, h, ...extra };
+}
+
+function padRect(type, x, y, w, h, extra = {}) {
+  return { id: `${type}-${Math.round(x)}-${Math.round(y)}`, type, x, y, w, h, ...extra };
+}
+
+function generateCubeMap(rng, stageNumber) {
+  const obstacles = [];
+  const pads = [];
+  const difficulty = stageNumber - 1;
+  let x = 430;
+  let segmentIndex = 0;
+
+  while (x < STAGE_LENGTH - 650) {
+    const safeGap = rng.int(100, 220) + difficulty * 10;
+    x += safeGap;
+    const pattern = CUBE_PATTERNS[rng.int(0, Math.min(CUBE_PATTERNS.length - 1, 4 + difficulty))];
+
+    if (pattern === 'singleSpike') {
+      obstacles.push(obstacleRect('spikeUp', x, GROUND_Y - 30, 28, 30));
+      x += 95;
+    } else if (pattern === 'doubleSpike') {
+      obstacles.push(obstacleRect('spikeUp', x, GROUND_Y - 30, 28, 30));
+      obstacles.push(obstacleRect('spikeUp', x + 26, GROUND_Y - 30, 28, 30));
+      x += 130;
+    } else if (pattern === 'tripleSpike') {
+      for (let i = 0; i < 3; i += 1) {
+        obstacles.push(obstacleRect('spikeUp', x + i * 26, GROUND_Y - 30, 28, 30));
+      }
+      x += 165;
+    } else if (pattern === 'shortBlock') {
+      obstacles.push(obstacleRect('block', x, GROUND_Y - 44, 44, 44));
+      x += 125;
+    } else if (pattern === 'blockSpike') {
+      obstacles.push(obstacleRect('block', x, GROUND_Y - 44, 44, 44));
+      obstacles.push(obstacleRect('spikeUp', x + 56, GROUND_Y - 30, 28, 30));
+      x += 165;
+    } else if (pattern === 'tallBlockPad') {
+      pads.push(padRect('jump', x - 82, GROUND_Y - 18, 42, 18, { power: 760 }));
+      obstacles.push(obstacleRect('block', x, GROUND_Y - 86, 48, 86));
+      x += 165;
+    } else if (pattern === 'boostLane') {
+      pads.push(padRect('boost', x - 14, GROUND_Y - 16, 48, 16, { multiplier: 1.38, duration: 2.3 }));
+      obstacles.push(obstacleRect('spikeUp', x + 110, GROUND_Y - 30, 28, 30));
+      obstacles.push(obstacleRect('spikeUp', x + 136, GROUND_Y - 30, 28, 30));
+      x += 220;
+    } else if (pattern === 'slowLane') {
+      pads.push(padRect('slow', x - 10, GROUND_Y - 16, 48, 16, { multiplier: 0.78, duration: 2.7 }));
+      obstacles.push(obstacleRect('block', x + 102, GROUND_Y - 44, 44, 44));
+      obstacles.push(obstacleRect('spikeUp', x + 158, GROUND_Y - 30, 28, 30));
+      x += 240;
+    } else if (pattern === 'doubleBlock') {
+      obstacles.push(obstacleRect('block', x, GROUND_Y - 44, 42, 44));
+      obstacles.push(obstacleRect('block', x + 92, GROUND_Y - 44, 42, 44));
+      x += 190;
+    }
+
+    if (segmentIndex % 5 === 3 && rng.chance(0.35)) {
+      pads.push(padRect('jump', x + 28, GROUND_Y - 18, 42, 18, { power: 740 }));
+      obstacles.push(obstacleRect('block', x + 120, GROUND_Y - 70, 44, 70));
+      x += 210;
+    }
+
+    segmentIndex += 1;
+  }
+
+  return {
+    type: 'cube',
+    groundY: GROUND_Y,
+    obstacles,
+    pads,
+    length: STAGE_LENGTH,
+    baseSpeed: 300 + difficulty * 18,
+    recommendedJumpVelocity: -610 - difficulty * 8,
+  };
+}
+
+function generateShipMap(rng, stageNumber) {
+  const obstacles = [];
+  const pads = [];
+  const difficulty = stageNumber - 1;
+  let x = 0;
+  let center = 268;
+
+  while (x < STAGE_LENGTH) {
+    const segW = x < 420 ? 180 : rng.int(180, 260);
+    const shift = x < 420 ? 0 : rng.int(-1 - difficulty, 1 + difficulty) * 18;
+    center = clamp(center + shift, 175, 340);
+    const gap = clamp(196 - difficulty * 14 + rng.int(-10, 20), 132, 210);
+    const topHeight = clamp(center - gap / 2, 70, 300);
+    const bottomStart = clamp(center + gap / 2, 230, WORLD_HEIGHT - 90);
+
+    obstacles.push(obstacleRect('block', x, 0, segW, Math.round(topHeight), { zone: 'top' }));
+    obstacles.push(obstacleRect('block', x, Math.round(bottomStart), segW, WORLD_HEIGHT - Math.round(bottomStart), { zone: 'bottom' }));
+
+    if (x > 260 && rng.chance(0.4)) {
+      const spikeW = 30;
+      const spikeH = 26 + difficulty * 3;
+      const spikeX = x + rng.int(24, Math.max(24, segW - 56));
+      if (rng.chance(0.5)) {
+        obstacles.push(obstacleRect('spikeDown', spikeX, Math.round(topHeight) - 2, spikeW, spikeH));
+      } else {
+        obstacles.push(obstacleRect('spikeUp', spikeX, Math.round(bottomStart) - spikeH + 2, spikeW, spikeH));
+      }
+    }
+
+    if (x > 320 && x < STAGE_LENGTH - 500 && rng.chance(0.28)) {
+      const padType = rng.pick(SHIP_PAD_TYPES);
+      const midY = clamp(center - 14, 140, WORLD_HEIGHT - 150);
+      pads.push(
+        padRect(padType, x + segW * 0.5 - 18, midY, 36, 36, {
+          multiplier: padType === 'boost' ? 1.34 : 0.8,
+          duration: padType === 'boost' ? 2 : 2.5,
+          floating: true,
+        }),
+      );
+    }
+
+    x += segW;
+  }
+
+  return {
+    type: 'ship',
+    groundY: GROUND_Y,
+    obstacles,
+    pads,
+    length: STAGE_LENGTH,
+    baseSpeed: 286 + difficulty * 16,
+    thrust: 1460 + difficulty * 30,
+  };
+}
+
+function generateStageMap({ stageNumber, character, sessionSeed }) {
+  const seed = hashString(`${sessionSeed}-${character}-${stageNumber}`);
+  const rng = new SeededRandom(seed);
+  const base = character === 'ship' ? generateShipMap(rng, stageNumber) : generateCubeMap(rng, stageNumber);
+
+  return {
+    ...base,
+    stageNumber,
+    character,
+    seed,
+    theme: buildStageTheme(stageNumber, character),
+    stars: createStars(rng, STAGE_LENGTH, buildStageTheme(stageNumber, character)),
+  };
+}
+
+
+/* =========================================================
+   screens.js  –  화면(UI) 관리
+   ========================================================= */
+const SCREENS = {
+  START: 'start',
+  CHARACTER: 'character',
+  PLAY: 'play',
+  FAIL: 'fail',
+  CLEAR: 'clear',
+};
+
+function screenMarkup({ title, body = '', buttons = '' }) {
+  return `
+    <section class="screen">
+      <h1>${title}</h1>
+      ${body}
+      <div class="button-row">${buttons}</div>
+    </section>
+  `;
+}
+
+function bindButtons(root, handlers) {
+  root.querySelectorAll('[data-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.action;
+      handlers[action]?.(button.dataset.value || undefined);
+    });
+  });
+}
+
+function createScreenManager({
+  root,
+  hud,
+  progressFill,
+  progressLabel,
+  stageIndicator,
+  characterIndicator,
+  onAction,
+  renderCharacterPreview,
+}) {
+  const handlers = {
+    startGame: () => onAction('startGame'),
+    openCharacterSelect: () => onAction('openCharacterSelect'),
+    selectCharacter: (value) => onAction('selectCharacter', value),
+    beginRun: () => onAction('beginRun'),
+    retryStage: () => onAction('retryStage'),
+    backToMenu: () => onAction('backToMenu'),
+    nextStage: () => onAction('nextStage'),
+  };
+
+  function showStart() {
+    hud.classList.add('hidden');
+    root.innerHTML = screenMarkup({
+      title: 'GEOMETRY DASH CLONE',
+      body: `
+        <p>Retro clone-built arcade action with procedural stages, pixel art, and touch/keyboard controls.</p>
+        <p class="tip">Tap / click / <span class="flashy">Space</span> to jump as the cube. Hold to fly as the ship.</p>
+      `,
+      buttons: `
+        <button class="pixel-button" data-action="openCharacterSelect">PLAY</button>
+      `,
+    });
+    bindButtons(root, handlers);
+  }
+
+  function showCharacterSelect({ selectedCharacter }) {
+    hud.classList.add('hidden');
+    root.innerHTML = `
+      <section class="screen">
+        <h2>CHOOSE YOUR RUNNER</h2>
+        <p>Select a style. Each character has four seeded stages and its own feel.</p>
+        <div class="card-row">
+          <button class="character-card ${selectedCharacter === 'cube' ? 'selected' : ''}" data-action="selectCharacter" data-value="cube">
+            <canvas width="180" height="180" data-preview="cube"></canvas>
+            <strong>CUBE</strong>
+            <p class="tip">Ground runner with timed jumps and jump pads.</p>
+          </button>
+          <button class="character-card ${selectedCharacter === 'ship' ? 'selected' : ''}" data-action="selectCharacter" data-value="ship">
+            <canvas width="180" height="180" data-preview="ship"></canvas>
+            <strong>SHIP</strong>
+            <p class="tip">Smooth thrust flight through tight pixel tunnels.</p>
+          </button>
+        </div>
+        <div class="button-row">
+          <button class="pixel-button alt" data-action="backToMenu">MENU</button>
+          <button class="pixel-button" data-action="beginRun">START RUN</button>
+        </div>
+      </section>
+    `;
+
+    root.querySelectorAll('[data-preview]').forEach((canvas) => {
+      renderCharacterPreview(canvas, canvas.dataset.preview);
+    });
+
+    bindButtons(root, handlers);
+  }
+
+  function showFail({ percent }) {
+    hud.classList.add('hidden');
+    root.innerHTML = screenMarkup({
+      title: 'RUN FAILED',
+      body: `
+        <p>You reached <span class="flashy">${percent}%</span> of the stage.</p>
+        <p class="tip">Retry the same seeded map or head back to the menu.</p>
+      `,
+      buttons: `
+        <button class="pixel-button danger" data-action="retryStage">RETRY?</button>
+        <button class="pixel-button alt" data-action="backToMenu">MENU</button>
+      `,
+    });
+    bindButtons(root, handlers);
+  }
+
+  function showClear({ attempts, timeTaken, stageNumber, isLastStage }) {
+    hud.classList.add('hidden');
+    root.innerHTML = screenMarkup({
+      title: stageNumber >= 4 ? 'RUN COMPLETE!' : 'STAGE CLEAR!',
+      body: `
+        <div class="mini-stats">
+          <div>ATTEMPTS: <span class="flashy">${attempts}</span></div>
+          <div>TIME: <span class="flashy">${timeTaken.toFixed(1)}s</span></div>
+          <div>STAGE: <span class="flashy">${stageNumber}</span></div>
+        </div>
+      `,
+      buttons: isLastStage
+        ? `
+            <button class="pixel-button" data-action="backToMenu">MENU</button>
+            <button class="pixel-button alt" data-action="openCharacterSelect">SWITCH CHARACTER</button>
+          `
+        : `
+            <button class="pixel-button" data-action="nextStage">NEXT STAGE</button>
+            <button class="pixel-button alt" data-action="backToMenu">MENU</button>
+          `,
+    });
+    bindButtons(root, handlers);
+  }
+
+  function showPlay() {
+    root.innerHTML = '';
+    hud.classList.remove('hidden');
+  }
+
+  function updateHud({ progress, stage, character }) {
+    progressFill.style.width = `${Math.max(0, Math.min(100, progress * 100))}%`;
+    progressLabel.textContent = `${Math.round(progress * 100)}%`;
+    stageIndicator.textContent = `STAGE ${stage}`;
+    characterIndicator.textContent = character.toUpperCase();
+  }
+
+  return {
+    showStart,
+    showCharacterSelect,
+    showFail,
+    showClear,
+    showPlay,
+    updateHud,
+  };
+}
+
+
+/* =========================================================
+   game.js  –  게임 루프·물리·렌더링·오디오
+   ========================================================= */
+
+const canvas = document.getElementById('game-canvas');
+const hud = document.getElementById('hud');
+const progressFill = document.getElementById('progress-fill');
+const progressLabel = document.getElementById('progress-label');
+const stageIndicator = document.getElementById('stage-indicator');
+const characterIndicator = document.getElementById('character-indicator');
+const screenRoot = document.getElementById('screen-root');
+
+const ctx = canvas.getContext('2d');
+const DPR = window.devicePixelRatio || 1;
+
+
+const BUTTON_SOUND = 'sound/geometry-dash-click-sound.mp3';
+const DEATH_SOUND = 'sound/geometry-dash-death-sound-effect.mp3';
+const MENU_MUSIC = 'sound/geometry-dash-menu-theme_xkGGC9M.mp3';
+const STAGE_MUSIC = {
+  1: 'sound/stage1_stereo-madness.mp3',
+  2: 'sound/stage2_practice-mode-geometry-dash_yxAuTWe.mp3',
+  3: 'sound/stage3.mp3',
+  4: 'sound/stage4.mp3',
+};
+
+const app = {
+  screen: SCREENS.START,
+  sessionSeed: Math.floor(Math.random() * 1_000_000_000),
+  selectedCharacter: 'cube',
+  currentStage: 1,
+  attempts: {
+    cube: [0, 0, 0, 0, 0],
+    ship: [0, 0, 0, 0, 0],
+  },
+  maps: {
+    cube: new Map(),
+    ship: new Map(),
+  },
+  input: {
+    pressed: false,
+    justPressed: false,
+  },
+  playfield: {
+    width: 960,
+    height: 540,
+  },
+  world: null,
+  player: null,
+  cameraX: 0,
+  stageStartMs: 0,
+  speedEffect: null,
+  padTriggers: new Set(),
+  lastFrameMs: 0,
+  audioUnlocked: false,
+  audio: {
+    menu: null,
+    stage: null,
+    click: null,
+    death: null,
+  },
+  clearSummary: null,
+  failSummary: null,
+};
+
+function makeAudio(src, { loop = false, volume = 1 } = {}) {
+  const audio = new Audio(src);
+  audio.loop = loop;
+  audio.volume = volume;
+  audio.preload = 'auto';
+  return audio;
+}
+
+function setupAudio() {
+  app.audio.menu = makeAudio(MENU_MUSIC, { loop: true, volume: 0.35 });
+  app.audio.click = makeAudio(BUTTON_SOUND, { volume: 0.6 });
+  app.audio.death = makeAudio(DEATH_SOUND, { volume: 0.7 });
+}
+
+function unlockAudio() {
+  if (app.audioUnlocked) return;
+  app.audioUnlocked = true;
+  if (app.screen !== SCREENS.PLAY) {
+    void playMenuMusic();
+  }
+}
+
+async function playMenuMusic() {
+  if (!app.audio.menu) return;
+  stopStageMusic();
+  app.audio.menu.currentTime = 0;
+  try {
+    await app.audio.menu.play();
+  } catch {
+    // Browser may require interaction first.
+  }
+}
+
+function stopMenuMusic() {
+  if (!app.audio.menu) return;
+  app.audio.menu.pause();
+}
+
+async function playStageMusic(stageNumber) {
+  stopMenuMusic();
+  stopStageMusic();
+  app.audio.stage = makeAudio(STAGE_MUSIC[stageNumber], { loop: true, volume: 0.4 });
+  try {
+    await app.audio.stage.play();
+  } catch {
+    // Browser may require interaction first.
+  }
+}
+
+function stopStageMusic() {
+  if (!app.audio.stage) return;
+  app.audio.stage.pause();
+  app.audio.stage = null;
+}
+
+function playSfx(kind) {
+  const audio = app.audio[kind];
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    void audio.play();
+  } catch {
+    // Ignore autoplay restrictions.
+  }
+}
+
+function getStageMap(character, stageNumber) {
+  const characterMaps = app.maps[character];
+  if (!characterMaps.has(stageNumber)) {
+    characterMaps.set(stageNumber, generateStageMap({ stageNumber, character, sessionSeed: app.sessionSeed }));
+  }
+  return characterMaps.get(stageNumber);
+}
+
+function createPlayer(character) {
+  return character === 'ship'
+    ? {
+        character,
+        w: 36,
+        h: 24,
+        screenX: 170,
+        y: 260,
+        vy: 0,
+        rotation: 0,
+      }
+    : {
+        character,
+        w: 28,
+        h: 28,
+        screenX: 170,
+        y: GROUND_Y - 28,
+        vy: 0,
+        grounded: true,
+        rotation: 0,
+      };
+}
+
+function resizeCanvas() {
+  if (!canvas || !ctx) return;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  canvas.width = Math.floor(width * DPR);
+  canvas.height = Math.floor(height * DPR);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  const scale = Math.min(width / 960, height / 540);
+  app.playfield.width = Math.floor(960 * scale);
+  app.playfield.height = Math.floor(540 * scale);
+}
+
+function worldScale() {
+  return app.playfield.width / 960;
+}
+
+function fieldOffset() {
+  return {
+    x: (window.innerWidth - app.playfield.width) / 2,
+    y: (window.innerHeight - app.playfield.height) / 2,
+  };
+}
+
+function getPlayerRect() {
+  const player = app.player;
+  if (!player) return null;
+  return {
+    x: app.cameraX + player.screenX - player.w / 2,
+    y: player.y,
+    w: player.w,
+    h: player.h,
+  };
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function pointInTriangle(px, py, a, b, c) {
+  const area = (p1, p2, p3) => (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2;
+  const total = Math.abs(area(a, b, c));
+  const part = Math.abs(area({ x: px, y: py }, b, c)) + Math.abs(area(a, { x: px, y: py }, c)) + Math.abs(area(a, b, { x: px, y: py }));
+  return Math.abs(total - part) < 0.5;
+}
+
+function triangleCollision(rect, obstacle) {
+  const { x, y, w, h, type } = obstacle;
+  const points =
+    type === 'spikeDown'
+      ? [
+          { x, y },
+          { x: x + w / 2, y: y + h },
+          { x: x + w, y },
+        ]
+      : [
+          { x, y: y + h },
+          { x: x + w / 2, y },
+          { x: x + w, y: y + h },
+        ];
+
+  const rectPoints = [
+    { x: rect.x, y: rect.y },
+    { x: rect.x + rect.w, y: rect.y },
+    { x: rect.x, y: rect.y + rect.h },
+    { x: rect.x + rect.w, y: rect.y + rect.h },
+    { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 },
+  ];
+
+  if (rectsOverlap(rect, obstacle) && rectPoints.some((point) => pointInTriangle(point.x, point.y, points[0], points[1], points[2]))) {
+    return true;
+  }
+
+  return rectsOverlap(rect, obstacle) && points.some((point) => point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h);
+}
+
+function applyPadEffect(pad) {
+  if (!pad || app.padTriggers.has(pad.id)) return;
+  app.padTriggers.add(pad.id);
+  playSfx('click');
+
+  if (pad.type === 'jump' && app.player.character === 'cube') {
+    app.player.vy = -pad.power;
+    app.player.grounded = false;
+  }
+
+  if (pad.type === 'boost' || pad.type === 'slow') {
+    app.speedEffect = {
+      multiplier: pad.multiplier,
+      timer: pad.duration,
+    };
+  }
+}
+
+function collidePlayer() {
+  const rect = getPlayerRect();
+  if (!rect || !app.world) return false;
+
+  for (const obstacle of app.world.obstacles) {
+    if (obstacle.type === 'block' && rectsOverlap(rect, obstacle)) {
+      return true;
+    }
+    if ((obstacle.type === 'spikeUp' || obstacle.type === 'spikeDown') && triangleCollision(rect, obstacle)) {
+      return true;
+    }
+  }
+
+  for (const pad of app.world.pads) {
+    if (rectsOverlap(rect, pad)) {
+      if (pad.type === 'jump' || pad.type === 'boost' || pad.type === 'slow') {
+        applyPadEffect(pad);
+      }
+    }
+  }
+
+  return false;
+}
+
+function resetStage(stageNumber = app.currentStage) {
+  app.currentStage = stageNumber;
+  app.world = getStageMap(app.selectedCharacter, app.currentStage);
+  app.player = createPlayer(app.selectedCharacter);
+  app.cameraX = 0;
+  app.speedEffect = null;
+  app.padTriggers = new Set();
+  app.stageStartMs = performance.now();
+  app.attempts[app.selectedCharacter][app.currentStage] += 1;
+  app.screen = SCREENS.PLAY;
+  screenManager.showPlay();
+  screenManager.updateHud({ progress: 0, stage: app.currentStage, character: app.selectedCharacter });
+  void playStageMusic(app.currentStage);
+}
+
+function failStage() {
+  stopStageMusic();
+  playSfx('death');
+  app.screen = SCREENS.FAIL;
+  const progress = clamp((app.cameraX + app.player.screenX) / app.world.length, 0, 1);
+  app.failSummary = { percent: Math.round(progress * 100) };
+  screenManager.showFail(app.failSummary);
+}
+
+function clearStage() {
+  stopStageMusic();
+  app.screen = SCREENS.CLEAR;
+  const timeTaken = (performance.now() - app.stageStartMs) / 1000;
+  app.clearSummary = {
+    attempts: app.attempts[app.selectedCharacter][app.currentStage],
+    timeTaken,
+    stageNumber: app.currentStage,
+    isLastStage: app.currentStage >= 4,
+  };
+  screenManager.showClear(app.clearSummary);
+}
+
+function currentSpeed() {
+  if (!app.world) return 0;
+  const effect = app.speedEffect?.multiplier || 1;
+  return app.world.baseSpeed * effect;
+}
+
+function updateCube(dt) {
+  const player = app.player;
+  const jumpVelocity = app.world.recommendedJumpVelocity;
+
+  if (app.input.justPressed && player.grounded) {
+    player.vy = jumpVelocity;
+    player.grounded = false;
+    playSfx('click');
+  }
+
+  player.vy += 1800 * dt;
+  player.y += player.vy * dt;
+  player.rotation += dt * 7;
+
+  if (player.y + player.h >= GROUND_Y) {
+    player.y = GROUND_Y - player.h;
+    player.vy = 0;
+    player.grounded = true;
+    player.rotation = 0;
+  }
+
+  if (player.y > WORLD_HEIGHT + 120 || player.y < -160) {
+    failStage();
+    return;
+  }
+}
+
+function updateShip(dt) {
+  const player = app.player;
+  if (app.input.pressed) {
+    player.vy -= app.world.thrust * dt;
+  }
+  player.vy += 980 * dt;
+  player.vy = clamp(player.vy, -520, 520);
+  player.y += player.vy * dt;
+  player.rotation = clamp(player.vy / 420, -0.8, 0.8);
+
+  if (player.y <= 0 || player.y + player.h >= WORLD_HEIGHT) {
+    failStage();
+  }
+}
+
+function updateGame(dt) {
+  if (app.screen !== SCREENS.PLAY || !app.world || !app.player) {
+    app.input.justPressed = false;
+    return;
+  }
+
+  if (app.speedEffect) {
+    app.speedEffect.timer -= dt;
+    if (app.speedEffect.timer <= 0) {
+      app.speedEffect = null;
+    }
+  }
+
+  app.cameraX += currentSpeed() * dt;
+
+  if (app.player.character === 'ship') {
+    updateShip(dt);
+  } else {
+    updateCube(dt);
+  }
+
+  if (app.screen === SCREENS.PLAY && collidePlayer()) {
+    failStage();
+  }
+
+  const progress = clamp((app.cameraX + app.player.screenX) / app.world.length, 0, 1);
+  screenManager.updateHud({ progress, stage: app.currentStage, character: app.selectedCharacter });
+
+  if (progress >= 0.995 && app.screen === SCREENS.PLAY) {
+    clearStage();
+  }
+
+  app.input.justPressed = false;
+}
+
+function drawPixelRect(drawCtx, x, y, w, h, color, pixel = 6, accent) {
+  drawCtx.fillStyle = color;
+  drawCtx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  if (accent) {
+    drawCtx.fillStyle = accent;
+    for (let yy = 0; yy < h; yy += pixel * 2) {
+      for (let xx = 0; xx < w; xx += pixel * 2) {
+        drawCtx.fillRect(Math.round(x + xx), Math.round(y + yy), Math.min(pixel, w - xx), Math.min(pixel, h - yy));
+      }
+    }
+  }
+}
+
+function drawGround(drawCtx, theme) {
+  if (app.world?.character === 'ship') {
+    drawCtx.fillStyle = 'rgba(255,255,255,0.06)';
+    drawCtx.fillRect(0, 0, 960, 8);
+    drawCtx.fillRect(0, WORLD_HEIGHT - 8, 960, 8);
+    return;
+  }
+  const groundTop = GROUND_Y;
+  drawPixelRect(drawCtx, 0, groundTop, 960, WORLD_HEIGHT - groundTop, theme.ground, 10, theme.ground2);
+  drawCtx.fillStyle = theme.glow;
+  drawCtx.fillRect(0, groundTop, 960, 6);
+  drawCtx.fillStyle = 'rgba(255,255,255,0.08)';
+  for (let x = 0; x < 960; x += TILE) {
+    drawCtx.fillRect(x, groundTop + ((Math.floor((x + app.cameraX * 0.2) / TILE) % 2) * 8), TILE / 2, 4);
+  }
+}
+
+function drawParallax(drawCtx, theme) {
+  const gradient = drawCtx.createLinearGradient(0, 0, 0, WORLD_HEIGHT);
+  gradient.addColorStop(0, theme.skyTop);
+  gradient.addColorStop(1, theme.skyBottom);
+  drawCtx.fillStyle = gradient;
+  drawCtx.fillRect(0, 0, 960, WORLD_HEIGHT);
+
+  app.world?.stars.forEach((star) => {
+    const px = ((star.x - app.cameraX * star.speedFactor) % 960 + 960) % 960;
+    drawCtx.fillStyle = star.color;
+    drawCtx.globalAlpha = 0.35 + star.layer * 0.2;
+    drawCtx.fillRect(Math.round(px), Math.round(star.y), star.size, star.size);
+    drawCtx.globalAlpha = 1;
+  });
+
+  drawCtx.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let i = 0; i < 7; i += 1) {
+    const width = 140 + i * 24;
+    const height = 40 + (i % 3) * 30;
+    const x = ((i * 170 - app.cameraX * (0.12 + i * 0.02)) % 1180 + 1180) % 1180 - 110;
+    const y = 120 + i * 42;
+    drawCtx.fillRect(x, y, width, height);
+  }
+}
+
+function drawArrow(drawCtx, x, y, color, direction = 'up') {
+  drawCtx.fillStyle = color;
+  if (direction === 'up') {
+    drawCtx.fillRect(x + 10, y + 8, 8, 16);
+    drawCtx.beginPath();
+    drawCtx.moveTo(x + 14, y);
+    drawCtx.lineTo(x + 28, y + 12);
+    drawCtx.lineTo(x, y + 12);
+    drawCtx.closePath();
+    drawCtx.fill();
+  } else if (direction === 'right') {
+    drawCtx.fillRect(x, y + 9, 20, 8);
+    drawCtx.beginPath();
+    drawCtx.moveTo(x + 30, y + 13);
+    drawCtx.lineTo(x + 18, y + 24);
+    drawCtx.lineTo(x + 18, y + 2);
+    drawCtx.closePath();
+    drawCtx.fill();
+  } else if (direction === 'left') {
+    drawCtx.fillRect(x + 12, y + 9, 20, 8);
+    drawCtx.beginPath();
+    drawCtx.moveTo(x, y + 13);
+    drawCtx.lineTo(x + 12, y + 24);
+    drawCtx.lineTo(x + 12, y + 2);
+    drawCtx.closePath();
+    drawCtx.fill();
+  }
+}
+
+function drawPads(drawCtx) {
+  if (!app.world) return;
+  app.world.pads.forEach((pad) => {
+    const x = pad.x - app.cameraX;
+    if (x < -80 || x > 1040) return;
+
+    if (pad.type === 'jump') {
+      drawPixelRect(drawCtx, x, pad.y, pad.w, pad.h, '#6b69ff', 4, '#a6d7ff');
+      drawArrow(drawCtx, x + 2, pad.y - 14, '#f5fbff', 'up');
+    }
+
+    if (pad.type === 'boost') {
+      drawPixelRect(drawCtx, x, pad.y, pad.w, pad.h, '#53d1ff', 4, '#d6ffff');
+      drawArrow(drawCtx, x + 2, pad.y + 2, '#10304f', 'right');
+      drawArrow(drawCtx, x + 12, pad.y + 2, '#10304f', 'right');
+    }
+
+    if (pad.type === 'slow') {
+      drawPixelRect(drawCtx, x, pad.y, pad.w, pad.h, '#ffd35b', 4, '#fff2a6');
+      drawArrow(drawCtx, x + 4, pad.y + 2, '#654d00', 'left');
+    }
+  });
+}
+
+function drawObstacles(drawCtx) {
+  if (!app.world) return;
+  app.world.obstacles.forEach((obstacle) => {
+    const x = obstacle.x - app.cameraX;
+    if (x + obstacle.w < -60 || x > 1020) return;
+    if (obstacle.type === 'block') {
+      drawPixelRect(drawCtx, x, obstacle.y, obstacle.w, obstacle.h, '#355c8f', 6, '#6fd5ff');
+      drawCtx.fillStyle = 'rgba(0,0,0,0.18)';
+      drawCtx.fillRect(x + obstacle.w - 8, obstacle.y, 8, obstacle.h);
+    } else {
+      drawCtx.fillStyle = obstacle.type === 'spikeDown' ? '#ff7a9f' : '#ff9f5d';
+      drawCtx.beginPath();
+      if (obstacle.type === 'spikeDown') {
+        drawCtx.moveTo(x, obstacle.y);
+        drawCtx.lineTo(x + obstacle.w / 2, obstacle.y + obstacle.h);
+        drawCtx.lineTo(x + obstacle.w, obstacle.y);
+      } else {
+        drawCtx.moveTo(x, obstacle.y + obstacle.h);
+        drawCtx.lineTo(x + obstacle.w / 2, obstacle.y);
+        drawCtx.lineTo(x + obstacle.w, obstacle.y + obstacle.h);
+      }
+      drawCtx.closePath();
+      drawCtx.fill();
+      drawCtx.fillStyle = 'rgba(255,255,255,0.25)';
+      drawCtx.fillRect(x + obstacle.w / 2 - 3, obstacle.type === 'spikeDown' ? obstacle.y + obstacle.h / 2 : obstacle.y + obstacle.h / 2, 6, 10);
+    }
+  });
+}
+
+function drawCube(drawCtx, player) {
+  const px = player.screenX - player.w / 2;
+  drawCtx.save();
+  drawCtx.translate(px + player.w / 2, player.y + player.h / 2);
+  drawCtx.rotate(player.rotation);
+  drawPixelRect(drawCtx, -player.w / 2, -player.h / 2, player.w, player.h, '#53d1ff', 6, '#bdf9ff');
+  drawCtx.fillStyle = '#17365f';
+  drawCtx.fillRect(-8, -6, 4, 4);
+  drawCtx.fillRect(4, -6, 4, 4);
+  drawCtx.fillRect(-8, 6, 16, 4);
+  drawCtx.restore();
+}
+
+function drawShip(drawCtx, player) {
+  const px = player.screenX - player.w / 2;
+  const py = player.y;
+  drawCtx.save();
+  drawCtx.translate(px + player.w / 2, py + player.h / 2);
+  drawCtx.rotate(player.rotation);
+  drawCtx.fillStyle = '#fefefe';
+  drawCtx.fillRect(-12, -8, 16, 16);
+  drawCtx.fillStyle = '#53d1ff';
+  drawCtx.fillRect(-16, -4, 8, 8);
+  drawCtx.fillStyle = '#ff7a9f';
+  drawCtx.beginPath();
+  drawCtx.moveTo(4, -10);
+  drawCtx.lineTo(18, 0);
+  drawCtx.lineTo(4, 10);
+  drawCtx.closePath();
+  drawCtx.fill();
+  drawCtx.fillStyle = '#ffda67';
+  drawCtx.fillRect(-22, -4, 6, 8);
+  drawCtx.fillStyle = 'rgba(255, 209, 111, 0.45)';
+  drawCtx.fillRect(-28, -2, 8, 4);
+  drawCtx.restore();
+}
+
+function drawStageMeta(drawCtx) {
+  if (!app.world) return;
+  drawCtx.fillStyle = 'rgba(255,255,255,0.15)';
+  drawCtx.fillRect(0, 0, 960, 1);
+  drawCtx.fillStyle = app.world.theme.glow;
+  drawCtx.font = '16px Courier New';
+  drawCtx.fillText(`SEED ${app.world.seed}`, 16, WORLD_HEIGHT - 18);
+}
+
+function render() {
+  if (!ctx || !canvas) return;
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+  const scale = worldScale();
+  const offset = fieldOffset();
+
+  ctx.save();
+  ctx.translate(offset.x, offset.y);
+  ctx.scale(scale, scale);
+
+  const theme = app.world?.theme || {
+    skyTop: '#1d2047',
+    skyBottom: '#090c1c',
+    glow: '#53d1ff',
+    glow2: '#f3ff72',
+    ground: '#183352',
+    ground2: '#0e213a',
+  };
+
+  drawParallax(ctx, theme);
+  drawGround(ctx, theme);
+  drawPads(ctx);
+  drawObstacles(ctx);
+
+  if (app.player) {
+    if (app.player.character === 'ship') {
+      drawShip(ctx, app.player);
+    } else {
+      drawCube(ctx, app.player);
+    }
+  }
+
+  drawStageMeta(ctx);
+  ctx.restore();
+}
+
+function renderCharacterPreview(canvasEl, character) {
+  const previewCtx = canvasEl.getContext('2d');
+  previewCtx.setTransform(1, 0, 0, 1, 0, 0);
+  previewCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  const previewScale = canvasEl.width / 180;
+  previewCtx.scale(previewScale, previewScale);
+  previewCtx.fillStyle = '#10172b';
+  previewCtx.fillRect(0, 0, 180, 180);
+  previewCtx.fillStyle = '#203257';
+  previewCtx.fillRect(0, 130, 180, 50);
+  previewCtx.fillStyle = '#53d1ff';
+  for (let i = 0; i < 6; i += 1) {
+    previewCtx.fillRect(18 + i * 26, 26 + (i % 2) * 12, 4, 4);
+  }
+
+  if (character === 'ship') {
+    previewCtx.translate(85, 84);
+    previewCtx.rotate(-0.18);
+    previewCtx.fillStyle = '#ffffff';
+    previewCtx.fillRect(-18, -12, 24, 24);
+    previewCtx.fillStyle = '#53d1ff';
+    previewCtx.fillRect(-28, -6, 10, 12);
+    previewCtx.fillStyle = '#ff7a9f';
+    previewCtx.beginPath();
+    previewCtx.moveTo(8, -16);
+    previewCtx.lineTo(34, 0);
+    previewCtx.lineTo(8, 16);
+    previewCtx.closePath();
+    previewCtx.fill();
+    previewCtx.fillStyle = '#ffda67';
+    previewCtx.fillRect(-38, -6, 10, 12);
+  } else {
+    previewCtx.translate(90, 92);
+    drawPixelRect(previewCtx, -28, -28, 56, 56, '#53d1ff', 8, '#bdf9ff');
+    previewCtx.fillStyle = '#17365f';
+    previewCtx.fillRect(-15, -12, 8, 8);
+    previewCtx.fillRect(7, -12, 8, 8);
+    previewCtx.fillRect(-15, 10, 30, 6);
+  }
+}
+
+function animate(timestamp) {
+  const dt = clamp((timestamp - (app.lastFrameMs || timestamp)) / 1000, 0, 0.033);
+  app.lastFrameMs = timestamp;
+  updateGame(dt);
+  render();
+  requestAnimationFrame(animate);
+}
+
+function onPressStart(event) {
+  if (event.target instanceof Element && event.target.closest('.pixel-button, .character-card')) {
+    unlockAudio();
+  }
+  if (app.screen === SCREENS.PLAY) {
+    unlockAudio();
+    app.input.pressed = true;
+    app.input.justPressed = true;
+    event.preventDefault();
+  }
+}
+
+function onPressEnd(event) {
+  if (app.screen === SCREENS.PLAY) {
+    app.input.pressed = false;
+    event.preventDefault();
+  }
+}
+
+function handleScreenAction(action, value) {
+  unlockAudio();
+  playSfx('click');
+
+  if (action === 'openCharacterSelect') {
+    app.screen = SCREENS.CHARACTER;
+    screenManager.showCharacterSelect({ selectedCharacter: app.selectedCharacter });
+    void playMenuMusic();
+  }
+
+  if (action === 'backToMenu') {
+    app.screen = SCREENS.START;
+    stopStageMusic();
+    screenManager.showStart();
+    void playMenuMusic();
+  }
+
+  if (action === 'selectCharacter' && value) {
+    app.selectedCharacter = value;
+    app.currentStage = 1;
+    screenManager.showCharacterSelect({ selectedCharacter: app.selectedCharacter });
+  }
+
+  if (action === 'beginRun' || action === 'startGame') {
+    app.currentStage = 1;
+    resetStage(1);
+  }
+
+  if (action === 'retryStage') {
+    resetStage(app.currentStage);
+  }
+
+  if (action === 'nextStage') {
+    resetStage(app.currentStage + 1);
+  }
+}
+
+const screenManager =
+  createScreenManager({
+        root: screenRoot,
+        hud,
+        progressFill,
+        progressLabel,
+        stageIndicator,
+        characterIndicator,
+        onAction: handleScreenAction,
+        renderCharacterPreview,
+      });
+
+function init() {
+  if (!canvas || !ctx || !screenManager) return;
+  setupAudio();
+  resizeCanvas();
+  app.world = getStageMap(app.selectedCharacter, app.currentStage);
+  app.player = createPlayer(app.selectedCharacter);
+  screenManager.showStart();
+  void playMenuMusic();
+  requestAnimationFrame(animate);
+}
+
+// 초기화
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'Space') {
+      if (!event.repeat) {
+        onPressStart(event);
+      }
+      event.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (event) => {
+    if (event.code === 'Space') {
+      onPressEnd(event);
+    }
+  });
+  window.addEventListener('pointerdown', onPressStart, { passive: false });
+  window.addEventListener('pointerup', onPressEnd, { passive: false });
+  window.addEventListener('pointercancel', onPressEnd, { passive: false });
+  window.addEventListener('blur', () => {
+    app.input.pressed = false;
+  });
+  window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
